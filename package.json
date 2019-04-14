@@ -24,7 +24,8 @@
 			"explorer/context": [
 				{
 					"command": "extension.addReference",
-					"when": "resourceScheme == file && resourceExtname == .csproj"
+					"when": "resourceScheme == file && resourceExtname == .csproj",
+					"group": "7_modification"
 				}
 			],
 			"commandPalette": [
