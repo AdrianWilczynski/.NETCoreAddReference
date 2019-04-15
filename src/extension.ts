@@ -87,16 +87,19 @@ async function getCurrentReferences(csproj: string) {
 }
 
 function readReferences(documentText: string) {
-	const references: string[] = [];
+	return matchMany(documentText, /<ProjectReference Include="([^"]+)" *\/>/g)
+		.map(m => m[1]);
+}
 
-	const regex = /<ProjectReference Include="([^"]+)" *\/>/g;
+function matchMany(text: string, pattern: RegExp) {
+	const matches: RegExpExecArray[] = [];
 
 	let match: RegExpExecArray | null;
-	while (match = regex.exec(documentText)) {
-		references.push(match[1]);
+	while (match = pattern.exec(text)) {
+		matches.push(match);
 	}
 
-	return references;
+	return matches;
 }
 
 function toAbsolutePaths(paths: string[], relativeTo: string) {
