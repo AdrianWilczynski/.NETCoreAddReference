@@ -8,14 +8,14 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 async function addReference(uri: vscode.Uri) {
-	const csprojs = await getOtherCsprojs(uri.fsPath);
-	if (csprojs.length === 0) {
+	const otherCsprojs = await getOtherCsprojs(uri.fsPath);
+	const currentReferences = await getCurrentReferences(uri.fsPath);
+
+	if (otherCsprojs.length === 0 && currentReferences.length === 0) {
 		return;
 	}
 
-	const currentReferences = await getCurrentReferences(uri.fsPath);
-
-	const references = await showQuickPick(csprojs, currentReferences);
+	const references = await showQuickPick(otherCsprojs, currentReferences);
 	if (!references) {
 		return;
 	}
@@ -35,7 +35,11 @@ async function getOtherCsprojs(csproj: string) {
 }
 
 async function showQuickPick(csprojs: string[], currentReferences: string[]) {
-	const picks = csprojs.map<vscode.QuickPickItem>(c => {
+	const referenceOutsideOfWorkspace = currentReferences.filter(r => !csprojs.includes(r));
+
+	const allReferences = [...csprojs, ...referenceOutsideOfWorkspace];
+
+	const picks = allReferences.map<vscode.QuickPickItem>(c => {
 		return {
 			label: path.basename(c, path.extname(c)),
 			detail: c,
