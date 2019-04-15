@@ -12,6 +12,7 @@ async function addReference(uri: vscode.Uri) {
 	const currentReferences = await getCurrentReferences(uri.fsPath);
 
 	if (otherCsprojs.length === 0 && currentReferences.length === 0) {
+		vscode.window.showWarningMessage('Unable to find any other projects in this workspace or project references in this .csproj file.');
 		return;
 	}
 
