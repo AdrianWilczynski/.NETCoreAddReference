@@ -1,13 +1,21 @@
 {
 	"name": "add-reference",
 	"displayName": ".NET Core Add Reference",
-	"description": "",
+	"description": "Add or remove project references of your .NET Core apps.",
 	"version": "0.0.1",
 	"engines": {
 		"vscode": "^1.33.0"
 	},
 	"categories": [
 		"Other"
+	],
+	"keywords": [
+		"C#",
+		"CSharp",
+		".NET",
+		".NET Core",
+		"Reference",
+		"References"
 	],
 	"activationEvents": [
 		"onCommand:extension.addReference"
