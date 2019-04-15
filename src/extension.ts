@@ -49,10 +49,18 @@ async function showQuickPick(csprojs: string[], currentReferences: string[]) {
 	}
 
 	return {
-		add: selection.filter(s => !currentReferences.includes(s.detail!))
-			.map(s => s.detail!),
-		remove: currentReferences.filter(c => !selection.some(s => s.detail === c))
+		add: getReferencesForAdd(selection, currentReferences),
+		remove: getReferencesForRemove(selection, currentReferences)
 	};
+}
+
+function getReferencesForAdd(selection: vscode.QuickPickItem[], currentReferences: string[]) {
+	return selection.filter(s => !currentReferences.includes(s.detail!))
+		.map(s => s.detail!);
+}
+
+function getReferencesForRemove(selection: vscode.QuickPickItem[], currentReferences: string[]) {
+	return currentReferences.filter(c => !selection.some(s => s.detail === c));
 }
 
 async function execCliCommand(command: 'add' | 'remove', project: string, projectReferences: string[]) {
@@ -73,16 +81,26 @@ async function getCurrentReferences(csproj: string) {
 	const documentText = (await vscode.workspace.openTextDocument(csproj))
 		.getText();
 
-	const regex = /<ProjectReference Include="([^"]+)" *\/>/g;
+	const references = readReferences(documentText);
 
+	return toAbsolutePaths(references, csproj);
+}
+
+function readReferences(documentText: string) {
 	const references: string[] = [];
+
+	const regex = /<ProjectReference Include="([^"]+)" *\/>/g;
 
 	let match: RegExpExecArray | null;
 	while (match = regex.exec(documentText)) {
 		references.push(match[1]);
 	}
 
-	return references.map(r => path.resolve(path.dirname(csproj), r));
+	return references;
+}
+
+function toAbsolutePaths(paths: string[], relativeTo: string) {
+	return paths.map(p => path.resolve(path.dirname(relativeTo), p));
 }
 
 export function deactivate() { }
