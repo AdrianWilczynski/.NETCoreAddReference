@@ -7,6 +7,7 @@
 		"type": "git",
 		"url": "https://github.com/AdrianWilczynski/.NETCoreAddReference.git"
 	},
+    "publisher": "adrianwilczynski",
 	"version": "0.0.1",
 	"engines": {
 		"vscode": "^1.33.0"
