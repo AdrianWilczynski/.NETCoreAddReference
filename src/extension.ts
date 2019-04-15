@@ -49,8 +49,8 @@ async function showQuickPick(csprojs: string[], currentReferences: string[]) {
 	}
 
 	return {
-		add: selection.filter(s => !currentReferences.includes(s.detail as string))
-			.map(s => s.detail as string),
+		add: selection.filter(s => !currentReferences.includes(s.detail!))
+			.map(s => s.detail!),
 		remove: currentReferences.filter(c => !selection.some(s => s.detail === c))
 	};
 }
