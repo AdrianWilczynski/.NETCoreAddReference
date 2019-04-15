@@ -15,8 +15,6 @@ async function addReference(uri: vscode.Uri) {
 
 	const currentReferences = await getCurrentReferences(uri.fsPath);
 
-	console.log(currentReferences);
-
 	const references = await showQuickPick(csprojs, currentReferences);
 	if (!references) {
 		return;
