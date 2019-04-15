@@ -1,14 +1,15 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { matchMany } from './regexUtils';
-import { toAbsolutePaths } from './pathUtils';
+import { toAbsolutePath, normalizePath } from './pathUtils';
 
 export async function readCurrentReferences(csprojPath: string) {
     const documentText = (await vscode.workspace.openTextDocument(csprojPath))
         .getText();
 
-    const references = matchReferences(documentText);
-
-    return toAbsolutePaths(references, csprojPath);
+    return matchReferences(documentText)
+        .map(r => toAbsolutePath(r, csprojPath))
+        .map(normalizePath);
 }
 
 function matchReferences(documentText: string) {
