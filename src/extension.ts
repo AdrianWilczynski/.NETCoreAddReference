@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as cp from 'child_process';
+import * as util from 'util';
 import * as path from 'path';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -7,52 +8,83 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 async function addReference(uri: vscode.Uri) {
-	const csprojs = await getOtherCsprojs(uri);
+	const csprojs = await getOtherCsprojs(uri.fsPath);
 	if (csprojs.length === 0) {
 		return;
 	}
 
-	const projectReferences = await showQuickPick(csprojs);
-	if (!projectReferences) {
+	const currentReferences = await getCurrentReferences(uri.fsPath);
+
+	console.log(currentReferences);
+
+	const references = await showQuickPick(csprojs, currentReferences);
+	if (!references) {
 		return;
 	}
 
-	execCliCommand(uri.fsPath, projectReferences);
+	if (references.add.length > 0) {
+		await execCliCommand('add', uri.fsPath, references.add);
+	}
+	if (references.remove.length > 0) {
+		await execCliCommand('remove', uri.fsPath, references.remove);
+	}
 }
 
-async function getOtherCsprojs(uri: vscode.Uri) {
+async function getOtherCsprojs(csproj: string) {
 	return (await vscode.workspace.findFiles('**/*.csproj'))
 		.map(c => c.fsPath)
-		.filter(c => c !== uri.fsPath);
+		.filter(c => c !== csproj);
 }
 
-async function showQuickPick(csprojs: string[]) {
+async function showQuickPick(csprojs: string[], currentReferences: string[]) {
 	const picks = csprojs.map<vscode.QuickPickItem>(c => {
 		return {
 			label: path.basename(c, path.extname(c)),
-			detail: c
+			detail: c,
+			picked: currentReferences.includes(c)
 		};
 	});
 
 	const selection = await vscode.window.showQuickPick(picks, { canPickMany: true });
-	if (!selection || selection.length === 0) {
+	if (!selection) {
 		return;
 	}
 
-	return selection.map(s => s.detail as string);
+	return {
+		add: selection.filter(s => !currentReferences.includes(s.detail as string))
+			.map(s => s.detail as string),
+		remove: currentReferences.filter(c => !selection.some(s => s.detail === c))
+	};
 }
 
-function execCliCommand(project: string, projectReferences: string[]) {
-	const target = projectReferences.map(t => `"${t}"`).join(' ');
+async function execCliCommand(command: 'add' | 'remove', project: string, projectReferences: string[]) {
+	const exec = util.promisify(cp.exec);
 
-	cp.exec(`dotnet add "${project}" reference ${target}`, (err, stdout, stderr) => {
-		if (stdout) {
-			vscode.window.showInformationMessage(stdout);
-		}
-		if (stderr) {
-			vscode.window.showWarningMessage(stderr);
-		}
-	});
+	const target = projectReferences.map(t => `"${t}"`).join(' ');
+	const output = await exec(`dotnet ${command} "${project}" reference ${target}`);
+
+	if (output.stdout) {
+		vscode.window.showInformationMessage(output.stdout);
+	}
+	if (output.stderr) {
+		vscode.window.showWarningMessage(output.stderr);
+	}
+}
+
+async function getCurrentReferences(csproj: string) {
+	const documentText = (await vscode.workspace.openTextDocument(csproj))
+		.getText();
+
+	const regex = /<ProjectReference Include="([^"]+)" *\/>/g;
+
+	const references: string[] = [];
+
+	let match: RegExpExecArray | null;
+	while (match = regex.exec(documentText)) {
+		references.push(match[1]);
+	}
+
+	return references.map(r => path.resolve(path.dirname(csproj), r));
 }
 
 export function deactivate() { }
