@@ -7,6 +7,19 @@ export function toAbsolutePath(relativePath: string, relativeTo: string) {
 }
 
 export function normalizePath(unnormalizedPath: string) {
-    unnormalizedPath = path.normalize(unnormalizedPath);
-    return unnormalizedPath.replace(/^[A-Z](?=:\\)/, unnormalizedPath[0].toLowerCase());
+    return usePlatformSpecificSeparator(
+        driveLetterToLowerCase(
+            path.normalize(unnormalizedPath)));
+}
+
+function driveLetterToLowerCase(unnormalizedPath: string) {
+    if (unnormalizedPath.length === 0) {
+        return unnormalizedPath;
+    }
+
+    return unnormalizedPath.replace(/^[A-Z](?=:[\\\/])/, unnormalizedPath[0].toLowerCase());
+}
+
+function usePlatformSpecificSeparator(unnormalizedPath: string) {
+    return unnormalizedPath.replace(/[\\\/]/, path.sep);
 }
