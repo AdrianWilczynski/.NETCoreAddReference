@@ -7,9 +7,14 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand('extension.addReference', addReference));
 }
 
-async function addReference(uri: vscode.Uri) {
-	const otherCsprojs = await getOtherCsprojs(uri.fsPath);
-	const currentReferences = await getCurrentReferences(uri.fsPath);
+async function addReference(uri: vscode.Uri | undefined) {
+	const csprojPath = getCurrentCsprojPath(uri);
+	if (!csprojPath) {
+		return;
+	}
+
+	const otherCsprojs = await getOtherCsprojs(csprojPath);
+	const currentReferences = await getCurrentReferences(csprojPath);
 
 	if (otherCsprojs.length === 0 && currentReferences.length === 0) {
 		vscode.window.showWarningMessage('Unable to find any other projects in this workspace or project references in this .csproj file.');
@@ -22,11 +27,29 @@ async function addReference(uri: vscode.Uri) {
 	}
 
 	if (references.add.length > 0) {
-		await execCliCommand('add', uri.fsPath, references.add);
+		await execCliCommand('add', csprojPath, references.add);
 	}
 	if (references.remove.length > 0) {
-		await execCliCommand('remove', uri.fsPath, references.remove);
+		await execCliCommand('remove', csprojPath, references.remove);
 	}
+}
+
+function getCurrentCsprojPath(uri: vscode.Uri | undefined) {
+	if (!uri) {
+		if (!vscode.window.activeTextEditor) {
+			return;
+		}
+
+		const path = vscode.window.activeTextEditor.document.fileName;
+
+		if (!path.endsWith('.csproj')) {
+			return;
+		}
+
+		return path;
+	}
+
+	return uri.fsPath;
 }
 
 async function getOtherCsprojs(csproj: string) {
@@ -72,13 +95,25 @@ async function execCliCommand(command: 'add' | 'remove', project: string, projec
 	const exec = util.promisify(cp.exec);
 
 	const target = projectReferences.map(t => `"${t}"`).join(' ');
-	const output = await exec(`dotnet ${command} "${project}" reference ${target}`);
 
-	if (output.stdout) {
-		vscode.window.showInformationMessage(output.stdout);
+	let infoMessage: string | undefined;
+	let errorMessage: string | undefined;
+
+	try {
+		const output = await exec(`dotnet ${command} "${project}" reference ${target}`);
+
+		infoMessage = output.stdout;
+		errorMessage = output.stderr;
 	}
-	if (output.stderr) {
-		vscode.window.showWarningMessage(output.stderr);
+	catch (e) {
+		errorMessage = (e as Error).message;
+	}
+
+	if (infoMessage) {
+		vscode.window.showInformationMessage(infoMessage);
+	}
+	if (errorMessage) {
+		vscode.window.showWarningMessage(errorMessage);
 	}
 }
 
