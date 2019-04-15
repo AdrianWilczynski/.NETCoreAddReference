@@ -1,7 +1,7 @@
 {
     "name": "add-reference",
     "displayName": ".NET Core Add Reference",
-    "description": "Add or remove project references of your .NET Core apps.",
+    "description": "Add or remove references of your .NET Core projects.",
     "icon": "img/logo.png",
     "repository": {
         "type": "git",
