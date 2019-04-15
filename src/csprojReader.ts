@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
 import { matchMany } from './regexUtils';
 import { toAbsolutePath, normalizePath } from './pathUtils';
 
