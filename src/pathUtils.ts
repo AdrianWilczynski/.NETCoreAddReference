@@ -21,5 +21,5 @@ function driveLetterToLowerCase(unnormalizedPath: string) {
 }
 
 function usePlatformSpecificSeparator(unnormalizedPath: string) {
-    return unnormalizedPath.replace(/[\\\/]/, path.sep);
+    return unnormalizedPath.replace(/[\\\/]/g, path.sep);
 }
